@@ -48,7 +48,7 @@ def resolve_thing_name(thing_file):
     return name
 
 def get_lastest_dweet():
-    resource = URL + f"/dweet/for/{thing_name}"
+    resource = URL + f":443/get/latest/dweet/for/{thing_name}"
     logger.info(f"Getting the last dweet from {resource}")
 
     request = requests.get(resource)
@@ -59,7 +59,7 @@ def get_lastest_dweet():
 
         dweet_content = None
         if dweet["this"] == "succeeded":
-            dweet_content = dweet["with"]["content"]
+            dweet_content = dweet["with"][0]["content"]
             print(f"dweet content: {dweet_content}")
         
         return dweet_content
@@ -69,11 +69,11 @@ def get_lastest_dweet():
     
 def poll_dweets_forever(delay_sec=10):
     """poll dweet.io for dweets about our thing"""
-    #while True:
-    dweet = get_lastest_dweet()
-    sleep(delay_sec)
-    if dweet is not None:
-        process_dweet(dweet) 
+    while True:
+        dweet = get_lastest_dweet()
+        sleep(delay_sec)
+        if dweet is not None:
+            process_dweet(dweet) 
 
 def process_dweet(dweet):
     global last_led_state
@@ -82,7 +82,7 @@ def process_dweet(dweet):
         logging.info("Dweet content does not contain a 'state' key")
         return 
     
-    led_state = dweet["state"]
+    requested_state = dweet["state"]
 
     if requested_state == last_led_state:
         logging.info("LED is already in state {requested_state}")
@@ -92,15 +92,15 @@ def process_dweet(dweet):
 
     if requested_state == "on":
         led.on()
-    elif requested_state == "blinking":
+    elif requested_state == "blink":
         led.blink()
     else: # want to turn the LED off or to som unexpected state
         requested_state = "off"
         led.off()
 
 
-    last_led_state = led_state
-    logger.info(f"LED is in state {led_state}")
+    last_led_state = requested_state
+    logger.info(f"LED is in state {requested_state}")
 
 def print_instructions():
     """Print instructions to terminal."""
